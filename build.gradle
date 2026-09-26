@@ -1,0 +1,113 @@
+plugins {
+    id 'java'
+    id 'idea'
+    id 'net.minecraftforge.gradle' version '7.0.40'
+    id 'net.minecraftforge.jarjar' version '0.2.3'
+}
+
+version = "${minecraft_version}-${mod_version}"
+group = mod_group_id
+
+base {
+    archivesName = mod_id
+}
+
+// Mojang ships Java 25 to players from 26.1 on
+java.toolchain.languageVersion = JavaLanguageVersion.of(25)
+
+jarJar.register()
+
+// The jar with Nitea nested inside is the one players install
+tasks.named('jar', Jar) {
+    archiveClassifier = 'slim'
+}
+tasks.named('jarJar') {
+    archiveClassifier = ''
+}
+tasks.named('assemble') {
+    dependsOn 'jarJar'
+}
+
+minecraft {
+    runs {
+        configureEach {
+            workingDir = layout.projectDirectory.dir('run')
+            systemProperty 'eventbus.api.strictRuntimeChecks', 'true'
+        }
+
+        register('client')
+
+        register('server') {
+            args '--nogui'
+        }
+    }
+}
+
+repositories {
+    minecraft.mavenizer(it)
+    maven fg.forgeMaven
+    maven fg.minecraftLibsMaven
+    maven { url 'https://libraries.nitea.cc' }
+    mavenCentral()
+}
+
+dependencies {
+    implementation minecraft.dependency("net.minecraftforge:forge:${minecraft_version}-${forge_version}")
+    annotationProcessor 'net.minecraftforge:eventbus-validator:7.0.5'
+
+    // LomLib Reloaded: a separate mod players install next to this one. Resolved from ../LomLibReloaded (settings.gradle)
+    implementation "com.pyro.lomlibreloaded:lomlibreloaded:${lomlib_version}"
+
+    // Error reporting (https://nitea.cc), nested in the jar. Forge loads a single copy, the newest, when several mods
+    // (LomLib Reloaded included) ship it.
+    implementation(jarJar("cc.nitea:nitea-forge-${minecraft_version}:${nitea_version}"))
+}
+
+// mods.toml with the values above
+var generateModMetadata = tasks.register('generateModMetadata', ProcessResources) {
+    var replaceProperties = [
+            minecraft_version_range: minecraft_version_range,
+            forge_version_range    : forge_version_range,
+            lomlib_version_range   : lomlib_version_range,
+            mod_id                 : mod_id,
+            mod_name               : mod_name,
+            mod_license            : mod_license,
+            mod_version            : mod_version,
+            mod_authors            : mod_authors,
+    ]
+    inputs.properties replaceProperties
+    expand replaceProperties
+    from 'src/main/templates'
+    into layout.buildDirectory.dir('generated/sources/modMetadata')
+}
+sourceSets.main.resources.srcDir generateModMetadata
+
+// The Nitea SDK key stays out of the sources: it's read from the git-ignored .env and bundled as
+// nitea/<mod_id>.properties, where the library looks for it. Without a .env the mod runs with reporting off.
+var generateNiteaConfig = tasks.register('generateNiteaConfig') {
+    var envText = providers.fileContents(layout.projectDirectory.file('.env')).asText.orElse('')
+    var outputDir = layout.buildDirectory.dir('generated/sources/niteaConfig')
+    var modId = mod_id
+    inputs.property('env', envText)
+    outputs.dir(outputDir)
+    doLast {
+        var env = [:]
+        envText.get().eachLine { String line ->
+            line = line.trim()
+            if (!line || line.startsWith('#') || !line.contains('=')) return
+            var parts = line.split('=', 2)
+            env[parts[0].trim()] = parts[1].trim().replaceAll(/^["']|["']$/, '')
+        }
+        var props = new Properties()
+        if (env.NITEA_SDK_KEY) props.setProperty('sdkKey', env.NITEA_SDK_KEY)
+        if (env.NITEA_ENDPOINT) props.setProperty('endpoint', env.NITEA_ENDPOINT)
+        var file = outputDir.get().file("nitea/${modId}.properties").asFile
+        file.parentFile.mkdirs()
+        file.withWriter('UTF-8') { props.store(it, ' Generated from .env by generateNiteaConfig. Do not commit.') }
+    }
+}
+sourceSets.main.resources.srcDir generateNiteaConfig
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}

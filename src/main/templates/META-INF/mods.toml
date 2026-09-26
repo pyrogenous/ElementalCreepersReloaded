@@ -1,0 +1,37 @@
+modLoader="javafml"
+loaderVersion="${forge_version_range}"
+license="${mod_license}"
+issueTrackerURL="https://nitea.cc"
+
+[[mods]]
+modId="${mod_id}"
+version="${mod_version}"
+displayName="${mod_name}"
+authors="${mod_authors}"
+logoFile="logo.png"
+description='''Adds 27 new creepers to Minecraft, each with its own explosion.
+A rewrite of Lomeli12's Elemental Creepers for modern Minecraft.
+
+Errors and crashes are reported with Nitea (https://nitea.cc), only after the player agrees.
+Found a bug? /elementalcreepers report bug <what happened>'''
+
+[[dependencies.${mod_id}]]
+    modId="forge"
+    mandatory=true
+    versionRange="${forge_version_range}"
+    ordering="NONE"
+    side="BOTH"
+
+[[dependencies.${mod_id}]]
+    modId="minecraft"
+    mandatory=true
+    versionRange="${minecraft_version_range}"
+    ordering="NONE"
+    side="BOTH"
+
+[[dependencies.${mod_id}]]
+    modId="lomlibreloaded"
+    mandatory=true
+    versionRange="${lomlib_version_range}"
+    ordering="AFTER"
+    side="BOTH"

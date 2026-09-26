@@ -1,0 +1,21 @@
+# gradle
+build
+.gradle
+
+# idea / eclipse
+out
+*.ipr
+*.iws
+*.iml
+.idea
+bin
+.settings
+.classpath
+.project
+
+# game runs
+run
+run-data
+
+# The Nitea SDK key (see .env.example)
+.env
