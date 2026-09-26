@@ -1,11 +1,13 @@
 package com.pyro.elementalcreepersreloaded.entity;
 
+import com.pyro.elementalcreepersreloaded.ECConfig;
 import com.pyro.elementalcreepersreloaded.ElementalCreepers;
 import com.pyro.elementalcreepersreloaded.entity.ai.ElementalSwellGoal;
 import com.pyro.lomlibreloaded.nitea.NiteaSupport;
 import java.util.List;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -18,6 +20,7 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityEvent;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LightningBolt;
@@ -51,7 +54,7 @@ import net.minecraftforge.event.ForgeEventFactory;
  * A creeper with its own explosion. Swells and ignites like a vanilla creeper (the fuse, flint and steel, charging
  * by lightning), but when the fuse runs out it calls {@link #explosion} instead of the vanilla explosion.
  */
-public abstract class ElementalCreeper extends Monster {
+public abstract class ElementalCreeper extends Monster implements SwellingCreeper {
     private static final EntityDataAccessor<Integer> DATA_SWELL_DIR = SynchedEntityData.defineId(ElementalCreeper.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Boolean> DATA_IS_POWERED = SynchedEntityData.defineId(ElementalCreeper.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Boolean> DATA_IS_IGNITED = SynchedEntityData.defineId(ElementalCreeper.class, EntityDataSerializers.BOOLEAN);
@@ -158,7 +161,7 @@ public abstract class ElementalCreeper extends Monster {
         if (!(this.level() instanceof ServerLevel level)) return;
         int power = this.isPowered() ? 2 : 1;
         boolean griefing = ForgeEventFactory.getMobGriefingEvent(level, this);
-        String name = this.getType().builtInRegistryHolder().key().identifier().getPath();
+        String name = BuiltInRegistries.ENTITY_TYPE.getKey(this.getType()).getPath();
         NiteaSupport.breadcrumb(ElementalCreepers.nitea(), "explosion", name + (power > 1 ? " (charged)" : "") + " exploded", this);
         // One broken explosion shouldn't take the world down with it: it's reported, and the creeper still goes away
         NiteaSupport.guard(ElementalCreepers.nitea(), name + " explosion", () -> this.explosion(level, power, griefing));
@@ -170,6 +173,10 @@ public abstract class ElementalCreeper extends Monster {
             this.dead = true;
             level.broadcastEntityEvent(this, EntityEvent.POOF);
             this.discard();
+        } else {
+            // Survivors start over instead of exploding again every tick
+            this.swell = 0;
+            this.oldSwell = 0;
         }
     }
 
@@ -215,7 +222,7 @@ public abstract class ElementalCreeper extends Monster {
 
     /** Dome or scatter, as the config says. */
     protected void fillExplosion(ServerLevel level, int radius, BlockState state) {
-        if (com.pyro.elementalcreepersreloaded.ECConfig.DOME_EXPLOSIONS.get())
+        if (ECConfig.DOME_EXPLOSIONS.get())
             this.domeExplosion(level, radius, state);
         else
             this.wildExplosion(level, radius, state);
@@ -237,7 +244,7 @@ public abstract class ElementalCreeper extends Monster {
     }
 
     @Override
-    public boolean doHurtTarget(ServerLevel level, net.minecraft.world.entity.Entity target) {
+    public boolean doHurtTarget(ServerLevel level, Entity target) {
         return true;
     }
 

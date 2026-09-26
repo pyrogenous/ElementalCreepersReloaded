@@ -1,0 +1,11 @@
+{
+  "replace": false,
+  "values": [
+    "elementalcreepersreloaded:creeperfish_stone",
+    "elementalcreepersreloaded:creeperfish_cobblestone",
+    "elementalcreepersreloaded:creeperfish_stone_bricks",
+    "elementalcreepersreloaded:creeperfish_mossy_stone_bricks",
+    "elementalcreepersreloaded:creeperfish_cracked_stone_bricks",
+    "elementalcreepersreloaded:creeperfish_chiseled_stone_bricks"
+  ]
+}

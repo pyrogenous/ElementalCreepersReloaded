@@ -1,0 +1,7 @@
+{
+  "type": "elementalcreepersreloaded:config_spawns",
+  "biomes": "#elementalcreepersreloaded:spawns_elemental_creepers",
+  "entity": "elementalcreepersreloaded:spider_creeper",
+  "min_count": 1,
+  "max_count": 3
+}

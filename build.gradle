@@ -15,17 +15,23 @@ base {
 // Mojang ships Java 25 to players from 26.1 on
 java.toolchain.languageVersion = JavaLanguageVersion.of(25)
 
-jarJar.register()
-
-// The jar with Nitea nested inside is the one players install
+// The jar players install is built by the jarJar task: the mod's classes plus Nitea nested inside. The plugin writes
+// its META-INF/jarjar/metadata.json into the jar it builds on, so it builds on baseJar (an intermediate copy), not on
+// `jar`: that one ends up on the dev classpath (and other mods' compile classpath), where metadata pointing at a nested
+// jar that isn't there stops Forge from loading.
 tasks.named('jar', Jar) {
     archiveClassifier = 'slim'
 }
-tasks.named('jarJar') {
+var baseJar = tasks.register('baseJar', Jar) {
+    archiveClassifier = 'base'
+    from sourceSets.main.output
+}
+// The plugin names the task after the jar it builds on: baseJarJar
+jarJar.register('jarJar', baseJar) {
     archiveClassifier = ''
 }
 tasks.named('assemble') {
-    dependsOn 'jarJar'
+    dependsOn 'baseJarJar'
 }
 
 minecraft {

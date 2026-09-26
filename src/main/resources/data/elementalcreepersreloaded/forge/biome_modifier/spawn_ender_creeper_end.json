@@ -1,0 +1,8 @@
+{
+  "type": "elementalcreepersreloaded:config_spawns",
+  "biomes": "#minecraft:is_end",
+  "entity": "elementalcreepersreloaded:ender_creeper",
+  "min_count": 1,
+  "max_count": 3,
+  "weight_multiplier": 5
+}
